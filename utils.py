@@ -79,7 +79,8 @@ def convertActionIdToButtonsArray(action_id, action_space_signature = [2,2,3,3,3
     # 		TURN_LEFT  |-> 3
     
     # \-> resulat to [2,2,3,3,3] as a signature
-    
+
+    # basically this convert an integer to a mixed binary/ternary representation
     action = []
     a = action_id
     for componant_cardinal in action_space_signature:
