@@ -1,0 +1,60 @@
+#include "zcommon.acs"
+
+global int 0:reward;
+// it's actually a fixed point number
+
+
+
+script 1 ENTER
+{
+	// equip the player with a shotgun with maximum ammo
+	ClearInventory();
+	GiveInventory("Fist", 1);
+	GiveInventory("Shotgun",1);
+	GiveInventory("Shell", 50);
+
+	// this cause the dying demon (with tag 66) to trigger script 2 when they die (granting reward to the agent)
+	SetThingSpecial(66, ACS_ExecuteAlways, 2);
+
+	//SetActorProperty(0,APROP_Health, 50);
+
+	// check if the player took damage at each timestep
+	int last_health = GetActorProperty(0, APROP_HEALTH);
+	while(TRUE)
+	{
+		//print(d:reward>>16); // converted to integer
+		int health = GetActorProperty(0, APROP_HEALTH);
+		if(health < last_health)
+		{
+			int delta = last_health - health;
+			//print(s:"you took : ", d: delta, s:" damage");
+			// the agent lose points equals to the damage taken
+			reward -= delta << 16; // we need to convert delta into fixed point number
+
+			last_health = health;
+		}
+
+		Delay(1);
+	}
+
+}
+
+script 2 (void)
+{
+	// reward for killing a demon
+	reward = reward + 20.;
+}
+
+script 98 DEATH
+{
+	//reward for dying
+	//int die = 100.;
+	reward = reward - 100.;
+}
+
+script 99 UNLOADING
+{
+	//reward for finishing the level
+	reward = reward + 100.;
+
+}
