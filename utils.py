@@ -83,6 +83,9 @@ def convertActionIdToButtonsArray(action_id, action_space_signature = [2,2,3,3,3
     # basically this convert an integer to a mixed binary/ternary representation
     action = []
     a = action_id
+    if action_id < 0 or action_id > np.prod(action_space_signature):
+        print("invalid action_id")
+        return None
     for componant_cardinal in action_space_signature:
         r = a % componant_cardinal
         a = a // componant_cardinal
@@ -97,6 +100,7 @@ def convertActionIdToButtonsArray(action_id, action_space_signature = [2,2,3,3,3
             if r == 2:
                 action.extend([0,1])   
         else: # non supported case
+            print("invalid action signature")
             return None
     return action
 
