@@ -10,7 +10,6 @@ they can be chosen with ```game.set_doom_map(string : map name)```
 \-> the agent should learn the value of picking up the shotgun
 
 ## MAP02
-4 cacodemon (strong enemies), and a pillar that can be used as cover. 
-the agent start with a supershotgun
+4 cacodemon (strong enemies), and a pillar that can be used as cover. The agent start with a supershotgun
 \-> the agent should learn to dodge projectiles
 
