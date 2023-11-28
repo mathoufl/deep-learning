@@ -57,3 +57,50 @@ def demoToGIF(GIF_name, demo_file, config_file, resolution=vizdoom.ScreenResolut
         game.advance_action(1)
     game.close()
     imageio.mimsave(GIF_name, images, duration = 1/35)
+
+
+def convertActionIdToButtonsArray(action_id, action_space_signature = [2,2,3,3,3]):
+    # la signature correspond au cardinal d'un composant du vecteur d'action
+    # le vecteur d'action est définit tel que chaque composant soit indépendant
+    # exemple tourner à droite ou à gauche = 1 composant
+    
+    # available_buttons =
+    #       ATTACK -> 2
+    
+    # 		SPEED  -> 2
+    
+    # 		MOVE_RIGHT |
+    # 		MOVE_LEFT  |-> 3
+    
+    # 		MOVE_BACKWARD |
+    # 		MOVE_FORWARD  |-> 3
+    
+    # 		TURN_RIGHT |
+    # 		TURN_LEFT  |-> 3
+    
+    # \-> resulat to [2,2,3,3,3] as a signature
+    
+    action = []
+    a = action_id
+    for componant_cardinal in action_space_signature:
+        r = a % componant_cardinal
+        a = a // componant_cardinal
+        if componant_cardinal == 2:
+            action.append(r)
+            
+        elif componant_cardinal ==3:
+            if r == 0:
+                action.extend([0,0])
+            if r == 1:
+                action.extend([1,0])
+            if r == 2:
+                action.extend([0,1])   
+        else: # non supported case
+            return None
+    return action
+
+# "unit test" of the fucntion
+# test_sign = [3,3,2]
+# for i in range(len(test_sign)):
+#     action = convertActionIdToButtonsArray(i, test_sign)
+#     print("action",i, ":=>", action)
