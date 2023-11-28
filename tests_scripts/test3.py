@@ -16,7 +16,7 @@ import time
 
 game = vizdoom.DoomGame()
 # game.load_config(os.path.join(vizdoom.scenarios_path,"basic.cfg"))
-game.load_config("C:/Users/Gabriel/Documents/_Documents/Etudes/3A 2/9.6.1 deep learning and RL/projet/custom map/config1.cfg")
+game.load_config("../config1.cfg")
 
 game.set_window_visible(False)
 

@@ -1,42 +1,21 @@
-import torch
 import vizdoom
+import model
+import time
+import numpy as np
+import matplotlib.pyplot as plt
 
-# idée de simplification on fait une action par frames
-action_dict = [
-    "Move Forward",
-    "Move Backward", 
-    "Turn Left",
-    "Turn Right",
-    "Strafe Left",
-    "Strafe Right",
-    "Shoot/Attack",
-    "Use/Interact",
-    "Reload Weapon",
-    "Change Weapon",
-    "Open/Close Doors",
-    "Use Health Packs/Items",
-]
-
-class Model (torch.nn.Module):
-    """
-    class représentant notre model sur lequel nous feront de l'apprentissage profond
-        => permet d'inferer les action les plus efficaces à faire à partir d'un état donné
-    """
-
-    def __init__(self) :
-        super().__init__()
-        self.conv1 = torch.nn.Conv2d(in_channels=2, out_channels=4, kernel_size=5, stride=2), 
-            # plusieur images d'entrées me permetent de prendre en compte le déplacement des mobs
-        self.con2 = torch.nn.Conv2d(4, 8, kernel_size=3, stride=1)
-        torch.nn.Linear(8, D_out)
-
-class Agent():
-
-    def __init__(self):
-        self.model = Model()
-
-
-if __name__ == "__main__":  
-    agent = Agent()
-
-    vizdoom.game
+game = vizdoom.DoomGame()
+game.load_config("config1.cfg")
+game.set_window_visible(True)
+game.init()
+game.new_episode()
+for a in model.actions :
+    if not game.is_episode_finished() :
+        state = game.get_state()
+        img = state.screen_buffer
+        screen  = np.moveaxis(state.screen_buffer,0, 2)
+        plt.imshow(screen)
+        plt.show()
+        game.make_action(a)
+    time.sleep(0.01)
+game.close()
