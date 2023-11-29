@@ -7,20 +7,18 @@ class Model(torch.nn.Module):
         => permet d'inferer les action les plus efficaces à faire à partir d'un état donné
     """
 
-    def __init__(self) :
+    def __init__(self, dim_image=(320,240), dim_action=108) :
         super().__init__()
-        self.conv1 = torch.nn.Sequential(
+        self.conv_layers = torch.nn.Sequential(
             torch.nn.Conv2d(4, 8, kernel_size=3, stride=2),
             torch.nn.AvgPool2d(2,2),
             torch.nn.ReLU(),
-        )
-
-        self.conv2 = torch.nn.Sequential(
+        
             torch.nn.Conv2d(8, 16, kernel_size=3, stride=1),
             torch.nn.AvgPool2d(2,2),
             torch.nn.ReLU(),
         )
-
+        
         self.flatten = torch.nn.Flatten()
         self.state = torch.nn.Linear(96, 1)
         self.advantage = torch.nn.Linear(96, model.available_actions_count)
