@@ -38,7 +38,8 @@ class Model(torch.nn.Module):
         output = self.flatten(output)
         state_value = self.state_value(output)
         advantage = self.advantage(output)
-        return(state_value, advantage)
+        q_value = state_value + (advantage - advantage.mean())
+        return(state_value, advantage, q_value)
         
 
 class Agent():
