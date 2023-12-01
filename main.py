@@ -11,4 +11,4 @@ from training import train_model
 model = Model()
 model.to("cuda")
 
-train_model(model, env_config_file="gamedata/training_maps/config_training.cfg")
+train_model(model, env_config_file="gamedata/training_maps/config_training.cfg", n_episodes=500)
