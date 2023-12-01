@@ -28,8 +28,8 @@ class Model(torch.nn.Module):
         )
 
         self.flatten = torch.nn.Flatten()
-        self.state_value = torch.nn.Linear(128, 1)
-        self.advantage = torch.nn.Linear(128, 108)
+        self.state_value = torch.nn.Linear(192, 1)
+        self.advantage = torch.nn.Linear(192, 108)
     
     def forward(self, input) :
         output = self.conv1(input)
