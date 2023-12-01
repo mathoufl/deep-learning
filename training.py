@@ -13,7 +13,7 @@ from utils import convertActionIdToButtonsArray
 from learn import learn
 
 
-
+import matplotlib.pyplot as plt
 
 class ReplayBuffer(object):
 
@@ -30,12 +30,25 @@ class ReplayBuffer(object):
         self.cursor = (1 + self.cursor) % self.capacity
 
     def sample_batches(self, batch_size, device="cuda"):
-         sample = np.random.choice(self.memory, batch_size, replace=False).tolist()
-         batch_state      = torch.tensor(sample[:,0], device=device)
-         batch_reward     = torch.tensor(sample[:,1], device=device)
-         batch_action     = torch.tensor(sample[:,2], device=device)
-         batch_next_state = torch.tensor(sample[:,3], device=device)
-         batch_non_final  = torch.tensor(sample[:,4], device=device)
+         idx = np.random.choice([i for i in range(len(self.memory))], batch_size, replace=False).tolist()
+         # sample = [self.memory[i] for i in idx]
+         batch_state      = []
+         batch_reward     = []
+         batch_action     = []
+         batch_next_state = []
+         batch_non_final  = []
+         for i in idx:
+             batch_state.append(self.memory[i][0])
+             batch_reward.append(self.memory[i][1])      
+             batch_action.append(self.memory[i][2])
+             batch_next_state.append(self.memory[i][3])
+             batch_non_final.append(self.memory[i][4])
+         batch_state      = torch.tensor(  batch_state  , device = device, dtype = torch.float)
+         batch_reward     = torch.tensor(  batch_reward  , device = device, dtype = torch.float)
+         batch_action     = torch.tensor(  batch_action  , device = device, dtype = torch.int64)
+         batch_next_state = torch.tensor(  batch_next_state  , device = device, dtype = torch.float)
+         batch_non_final  = torch.tensor(  batch_non_final  , device = device, dtype = torch.float)
+             
          
          return batch_state, batch_reward, batch_action, batch_next_state, batch_non_final
 
@@ -49,7 +62,7 @@ class ReplayBuffer(object):
 """
 
 def train_model(model, env_config_file, n_imagesByState = 4,
-                img_dim=(320,240),action_dim=108, n_episodes=100,
+                img_dim=(240,320),action_dim=108, n_episodes=100,
                 epsilon_schedule = (lambda t : 0.1),
                 replay_buffer_capacity=500,
                 batch_size = 30, learning_rate =1e-4, weight_decay=5e-3,
@@ -67,11 +80,12 @@ def train_model(model, env_config_file, n_imagesByState = 4,
     game = vizdoom.DoomGame()
     
     # we will store the training things in the folder :
-    dir_training_report = "training report " + str(datetime.datetime.now())
+    dir_training_report = "training report " + str(datetime.datetime.now()).replace(":",";")
     os.mkdir( dir_training_report)
     os.mkdir(dir_training_report + "/episode_demos")
     
     game.load_config(env_config_file)
+    game.init()
     
     for i_episode in range(n_episodes):
         
@@ -105,22 +119,19 @@ def train_model(model, env_config_file, n_imagesByState = 4,
             action_id = None
             if np.random.random() < epsilon:
                 # exploratory action :
-                action_id = np.random.random(action_dim)
+                action_id = np.random.randint(action_dim)
             else:
                 # greedy action :
                 with torch.no_grad():
                     # the different images are different channels for the model
                     # the channels are the first dimension after the batch dimesnsion in conv2D
-                    state_tensor = torch.tensor(state_image, device=device)
+                    state_tensor = torch.tensor(state_image, device=device, dtype=torch.float)
                     # torch.movedim(state_tensor, 2, 0)  # it is useless !?
                     state_tensor = state_tensor.unsqueeze(0)
-                    
-                    q_values = model(state_tensor)
-                    
+                    q_values = model(state_tensor)[2]
                     action_id = torch.argmax(q_values).cpu().item()
                     
-                    qvalues_during_training.append( torch.max(q_values).cput().item() )
-                    
+                    qvalues_during_training.append( torch.max(q_values).cpu().item() )       
             action = convertActionIdToButtonsArray(action_id) # action signature! we are using the default one here
             # --------------------------------
             
@@ -128,7 +139,14 @@ def train_model(model, env_config_file, n_imagesByState = 4,
             reward = 0
             for _ in range(frame_skip+1):
                 reward += game.make_action(action)
-                image_buffer.append(game.get_state().screen_buffer)
+                
+                # plt.imshow(game.get_state().screen_buffer, cmap="gray")
+                # plt.show()
+                
+                if not game.is_episode_finished():
+                    image_buffer.append(game.get_state().screen_buffer)
+                else:
+                    image_buffer.append(list(np.zeros(img_dim)))
                 # what if the episode end during this time ?
                 
             # ----- storing the transition in the replay buffer ------
@@ -147,6 +165,7 @@ def train_model(model, env_config_file, n_imagesByState = 4,
         reward_file.close()
         average_q_file.close()
         
+        print("episode#"+str(i_episode)+"finished !")
         
         
         # LEARNING TIME - we lean after the end of each episode
