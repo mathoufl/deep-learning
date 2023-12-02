@@ -43,7 +43,7 @@ class ReplayBuffer(object):
              batch_action.append(self.memory[i][2])
              batch_next_state.append(self.memory[i][3])
              batch_non_final.append(self.memory[i][4])
-         batch_state      = torch.tensor(  batch_state  , device = device, dtype = torch.float)
+         batch_state      = torch.tensor(  np.array(batch_state)  , device = device, dtype = torch.float)
          batch_reward     = torch.tensor(  batch_reward  , device = device, dtype = torch.float)
          batch_action     = torch.tensor(  batch_action  , device = device, dtype = torch.int64)
          batch_next_state = torch.tensor(  batch_next_state  , device = device, dtype = torch.float)
@@ -165,6 +165,10 @@ def train_model(model, env_config_file, n_imagesByState = 4,
                 
         # end of the episode
         print("\nepisode#"+str(i_episode)+"finished !")
+        
+        # we update the target network at the end of each episode 
+        target_model.load_state_dict(model.state_dict())
+        
         # store some training tracking metrics
         total_reward = game.get_total_reward()
         average_q = np.mean(qvalues_during_training)

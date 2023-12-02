@@ -19,14 +19,14 @@ class Model(torch.nn.Module):
             torch.nn.ReLU(),
 
             torch.nn.Conv2d(8, 16, kernel_size=3, stride=1),
-            torch.nn.AvgPool2d((4,4)),
+            torch.nn.AvgPool2d((2,2)),
             torch.nn.ReLU(),
             
             torch.nn.Flatten()
             )
         
-        self.state_value = torch.nn.Linear(192, 1)
-        self.advantage = torch.nn.Linear(192, 108)
+        self.state_value = torch.nn.Linear(96, 1)
+        self.advantage = torch.nn.Linear(96, 108)
     
     def forward(self, input) :
         state_encoding = self.conv_layers(input)
