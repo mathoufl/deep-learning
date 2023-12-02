@@ -65,7 +65,7 @@ def train_model(model, env_config_file, n_imagesByState = 4,
                 img_dim=(240,320),action_dim=108, n_episodes=100,
                 epsilon_schedule = (lambda t : 0.1),
                 replay_buffer_capacity=500,
-                batch_size = 30, learning_rate =1e-4, weight_decay=5e-3,
+                batch_size = 16, learning_rate =1e-4, weight_decay=5e-3,
                 frame_skip=0, doom_map_list=["MAP01", "MAP02"], device = "cuda"):
     
     target_model = copy.deepcopy(model) # not the actual synthax
@@ -83,6 +83,7 @@ def train_model(model, env_config_file, n_imagesByState = 4,
     dir_training_report = "training report " + str(datetime.datetime.now()).replace(":",";")
     os.mkdir( dir_training_report)
     os.mkdir(dir_training_report + "/episode_demos")
+    os.mkdir(dir_training_report + "/model_checkpoints")
     
     game.load_config(env_config_file)
     game.init()
@@ -112,7 +113,7 @@ def train_model(model, env_config_file, n_imagesByState = 4,
             # the env automatically finish after a number of step definied in the config file
             # using only one stop condition for this loop is fine
             
-            state_image = list(image_buffer)
+            state_image = np.array(image_buffer)
 
             
             # ---- epsilon greedy policy ----
@@ -154,10 +155,21 @@ def train_model(model, env_config_file, n_imagesByState = 4,
             next_state = list(image_buffer) # this is the frames the agent observed while holding the action
             
             replay_buffer.store_transition(state_image, action_id, reward, next_state, non_final)
-        
+            
+            # LEARNING TIME - we lean after the end of each episode
+            if len(replay_buffer) >= batch_size*4:
+                batch_state, batch_action, batch_reward, batch_next_state, batch_non_final =\
+                                                             replay_buffer.sample_batches(batch_size)
+                learn(model, target_model, optim,
+                      batch_state, batch_action, batch_reward, batch_next_state, batch_non_final)
+                
+        # end of the episode
+        print("\nepisode#"+str(i_episode)+"finished !")
         # store some training tracking metrics
         total_reward = game.get_total_reward()
         average_q = np.mean(qvalues_during_training)
+        print("total_reward : ", total_reward)
+        print("average max q value : ", average_q, "\n")
         reward_file = open(dir_training_report+"/rewards.txt", "a") 
         average_q_file = open(dir_training_report+"/average_q.txt", "a") 
         reward_file.write(str(total_reward)+"\n")
@@ -165,13 +177,10 @@ def train_model(model, env_config_file, n_imagesByState = 4,
         reward_file.close()
         average_q_file.close()
         
-        print("episode#"+str(i_episode)+"finished !")
+        if (i_episode+1) % 5 == 0 or i_episode == n_episodes-1:
+            torch.save(model, dir_training_report + "/model_checkpoints/model#"+str(i_episode))
         
         
-        # LEARNING TIME - we lean after the end of each episode
-        batch_state, batch_action, batch_reward, batch_next_state, batch_non_final =\
-                                                     replay_buffer.sample_batches(batch_size)
-        learn(model, target_model, optim,
-              batch_state, batch_action, batch_reward, batch_next_state, batch_non_final)
+        
         
             

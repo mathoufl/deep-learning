@@ -9,35 +9,30 @@ class Model(torch.nn.Module):
 
     def __init__(self) :
         super().__init__()
-        self.conv1 = torch.nn.Sequential(
+        self.conv_layers = torch.nn.Sequential(
             torch.nn.Conv2d(4, 8, kernel_size=3, stride=2),
             torch.nn.AvgPool2d((2,2)),
             torch.nn.ReLU(),
-        )
-
-        self.conv2 = torch.nn.Sequential(
+        
             torch.nn.Conv2d(8, 8, kernel_size=3, stride=2),
             torch.nn.AvgPool2d((2,2)),
             torch.nn.ReLU(),
-        )
 
-        self.conv3 = torch.nn.Sequential(
             torch.nn.Conv2d(8, 16, kernel_size=3, stride=1),
             torch.nn.AvgPool2d((4,4)),
             torch.nn.ReLU(),
-        )
-
-        self.flatten = torch.nn.Flatten()
+            
+            torch.nn.Flatten()
+            )
+        
         self.state_value = torch.nn.Linear(192, 1)
         self.advantage = torch.nn.Linear(192, 108)
     
     def forward(self, input) :
-        output = self.conv1(input)
-        output = self.conv2(output)
-        output = self.conv3(output)
-        output = self.flatten(output)
-        state_value = self.state_value(output)
-        advantage = self.advantage(output)
+        state_encoding = self.conv_layers(input)
+
+        state_value = self.state_value(state_encoding)
+        advantage = self.advantage(state_encoding)
         q_value = state_value + (advantage - advantage.mean())
         return(state_value, advantage, q_value)
         
