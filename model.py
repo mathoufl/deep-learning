@@ -9,6 +9,7 @@ class Model(torch.nn.Module):
 
     def __init__(self) :
         super().__init__()
+        # we want groups = in_channel on the first conv layer ?
         self.conv_layers = torch.nn.Sequential(
             torch.nn.Conv2d(1, 8, kernel_size=3, stride=2),
             torch.nn.AvgPool2d((2,2)),

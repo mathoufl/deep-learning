@@ -47,3 +47,6 @@ train_model(model,
 path = r"C:\Users\Gabriel\Documents\_Documents\Etudes\3A 2\9.6.1 deep learning and RL\projet\training_reports\training report 2-12-2023 - 14h47min2s\episode_demos\episode#20.lmp"
 
 demoToMP4("video_demo.mp4", path, config_file="gamedata/training_maps/config_training.cfg")
+
+#%%
+

@@ -83,7 +83,7 @@ def train_model(model, env_config_file, n_imagesByState = 4,
     
     # we will store the training things in the folder :
     d = datetime.datetime.now()
-    date = str( d.day)+"-"+str(d.month)+"-"+str(d.year) + " - " + str(d.hour)+"h"+str(d.minute)+ "min" + str(d.second) + "s"
+    date = f"{d.day:02}-{d.month:02}-{d.year} - {d.hour:02}h{d.minute:02}min{d.second:02}s"
     dir_training_report = "../training_reports/training report " + date
     os.mkdir( dir_training_report)
     os.mkdir(dir_training_report + "/episode_demos")
@@ -175,22 +175,104 @@ def train_model(model, env_config_file, n_imagesByState = 4,
         # we update the target network at the end of each episode 
         target_model.load_state_dict(model.state_dict())
         
-        # store some training tracking metrics
         total_reward = game.get_total_reward()
         average_q = np.mean(qvalues_during_training)
-        print("total_reward : ", total_reward)
-        print("average max q value : ", average_q, "\n")
-        reward_file = open(dir_training_report+"/rewards.txt", "a") 
-        average_q_file = open(dir_training_report+"/average_q.txt", "a") 
+        print("total training reward : ", total_reward)
+        print("average training max q value : ", average_q, "\n")
+        
+        # test step :
+        test_rewards = []
+        for doom_map in doom_map_list:
+            rewards = test_model(model, env_config_file, doom_map_list=[doom_map], n_episodes=10,
+                                n_imagesByState = n_imagesByState,
+                                img_dim=img_dim, action_signature=action_signature, 
+                                frame_skip=frame_skip,device = device)
+            test_rewards.append(np.mean(rewards))
+            print("average test rewards on "+doom_map+f" : {test_rewards[-1]}")
+        model.train()
+        
+        # store some training tracking metrics
+        reward_file = open(dir_training_report+"/training_rewards.txt", "a") 
         reward_file.write(str(total_reward)+"\n")
-        average_q_file.write(str(average_q)+"\n")
         reward_file.close()
+        test_reward_file = open(dir_training_report+"/testing_rewards.txt", "a") 
+        test_reward_file.write(str(test_rewards)+"\n")
+        test_reward_file.close()
+        average_q_file = open(dir_training_report+"/average_q.txt", "a") 
+        average_q_file.write(str(average_q)+"\n")
+        
         average_q_file.close()
         
         if (i_episode+1) % 5 == 0 or i_episode == n_episodes-1:
             torch.save(model, dir_training_report + "/model_checkpoints/model#"+str(i_episode))
         
         
+
+def test_model(model, env_config_file, save_demo=False, window_visible=False, n_imagesByState = 4,
+                img_dim=(240,320), action_signature=[2,2,3,3,3], 
+                n_episodes=10, frame_skip=0, doom_map_list=["MAP01", "MAP02"], device = "cuda"):
+    game = vizdoom.DoomGame()
+    model.eval()
+    # we will store the demo in the folder :
+    d = datetime.datetime.now()
+    date = f"{d.day:02}-{d.month:02}-{d.year} - {d.hour:02}h{d.minute:02}min{d.second:02}s"
+    os.mkdir("test_demos")
+    os.mkdir("test_demos/test_demos_"+date)
+    
+    game.load_config(env_config_file)
+    if window_visible:
+        game.set_window_visible(True)
+    game.init()
+    
+    rewards_history = []
+    
+    for i_episode in range(n_episodes):
         
         
+        game.set_doom_map(np.random.choice(doom_map_list))
+        # here we specify a file to store the demo to if we want
+        # game.new_episode(dir_training_report + "/episode_demos/episode#"+str(i_episode))
+        if save_demo:
+            game.new_episode("test_demos/test_demos_"+date+"/episode#{i_episode:04}")
+        else:
+            game.new_episode()
+        
+        # initialize the image buffer with n_imagesByState blank image (in gray scale)
+        # this is wath the agent will see : the n last images of the environnement
+        image_buffer = deque([], n_imagesByState)
+        # image_buffer = deque(np.asarray(np.zeros([img_dim[0],img_dim[1],n_imagesByState])).tolist(),
+        #                      n_imagesByState)
+        
+        # fill the image buffer with the first few frames of the episode
+        for i in range(n_imagesByState):
+            image_buffer.append(game.get_state().screen_buffer)
             
+        state_image = None
+        
+        while not game.is_episode_finished():
+            # the env automatically finish after a number of step definied in the config file
+            # using only one stop condition for this loop is fine
+            
+            state_image = np.array(image_buffer)
+            
+            # greedy action :
+            with torch.no_grad():
+                # the different images are different channels for the model
+                # the channels are the first dimension after the batch dimesnsion in conv2D
+                state_tensor = torch.tensor(state_image, device=device, dtype=torch.float)
+                state_tensor = state_tensor.unsqueeze(0)
+                q_values = model(state_tensor)[2]
+                action_id = torch.argmax(q_values).cpu().item()    
+            action = convertActionIdToButtonsArray(action_id, action_signature)
+            # --------------------------------
+            
+            # the agent will hold this action for frame_skip+1 ticks, but still "watch" what's happening
+            for _ in range(frame_skip+1):
+                game.make_action(action)
+                if not game.is_episode_finished():
+                    image_buffer.append(game.get_state().screen_buffer)
+                else: # if the episode end during this time 
+                    image_buffer.append(list(np.zeros(img_dim)))
+        rewards_history.append(game.get_total_reward())
+    return rewards_history
+                
