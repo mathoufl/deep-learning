@@ -46,7 +46,7 @@ class ReplayBuffer(object):
          batch_state      = torch.tensor(  np.array(batch_state)  , device = device, dtype = torch.float)
          batch_reward     = torch.tensor(  batch_reward  , device = device, dtype = torch.float)
          batch_action     = torch.tensor(  batch_action  , device = device, dtype = torch.int64)
-         batch_next_state = torch.tensor(  batch_next_state  , device = device, dtype = torch.float)
+         batch_next_state = torch.tensor(  np.array(batch_next_state)  , device = device, dtype = torch.float)
          batch_non_final  = torch.tensor(  batch_non_final  , device = device, dtype = torch.float)
              
          
@@ -63,7 +63,7 @@ class ReplayBuffer(object):
 
 def train_model(model, env_config_file, n_imagesByState = 4,
                 img_dim=(240,320), action_signature=[2,2,3,3,3], 
-                n_episodes=100,
+                n_episodes=100, window_visible=False,
                 epsilon_schedule = (lambda t : 0.1),
                 replay_buffer_capacity=500,
                 batch_size = 16, learning_rate =1e-4, weight_decay=5e-3,
@@ -90,7 +90,8 @@ def train_model(model, env_config_file, n_imagesByState = 4,
     os.mkdir(dir_training_report + "/model_checkpoints")
     
     game.load_config(env_config_file)
-    game.set_window_visible(True)
+    if window_visible:
+        game.set_window_visible(True)
     game.init()
     
     for i_episode in range(n_episodes):
@@ -183,7 +184,7 @@ def train_model(model, env_config_file, n_imagesByState = 4,
         # test step :
         test_rewards = []
         for doom_map in doom_map_list:
-            rewards = test_model(model, env_config_file, doom_map_list=[doom_map], n_episodes=10,
+            rewards = test_model(model, env_config_file, doom_map_list=[doom_map], n_episodes=5,
                                 n_imagesByState = n_imagesByState,
                                 img_dim=img_dim, action_signature=action_signature, 
                                 frame_skip=frame_skip,device = device)
@@ -216,8 +217,7 @@ def test_model(model, env_config_file, save_demo=False, window_visible=False, n_
     # we will store the demo in the folder :
     d = datetime.datetime.now()
     date = f"{d.day:02}-{d.month:02}-{d.year} - {d.hour:02}h{d.minute:02}min{d.second:02}s"
-    os.mkdir("test_demos")
-    os.mkdir("test_demos/test_demos_"+date)
+    os.makedirs("test_demos/test_demos_"+date)
     
     game.load_config(env_config_file)
     if window_visible:
