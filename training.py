@@ -62,30 +62,35 @@ class ReplayBuffer(object):
 """
 
 def train_model(model, env_config_file, n_imagesByState = 4,
-                img_dim=(240,320),action_dim=108, n_episodes=100,
+                img_dim=(240,320), action_signature=[2,2,3,3,3], 
+                n_episodes=100,
                 epsilon_schedule = (lambda t : 0.1),
                 replay_buffer_capacity=500,
                 batch_size = 16, learning_rate =1e-4, weight_decay=5e-3,
                 frame_skip=0, doom_map_list=["MAP01", "MAP02"], device = "cuda"):
     
-    target_model = copy.deepcopy(model) # not the actual synthax
+    target_model = copy.deepcopy(model)
     # we make a copy of the model that will be used for calculating the target
     # this increase stability
     # it will follow the actual model with some lag
     
     optim =  torch.optim.Adam(model.parameters(), lr=learning_rate, weight_decay=weight_decay )
-    
     replay_buffer = ReplayBuffer(replay_buffer_capacity)
+    
+    action_dim = np.prod(action_signature)
     
     game = vizdoom.DoomGame()
     
     # we will store the training things in the folder :
-    dir_training_report = "training report " + str(datetime.datetime.now()).replace(":",";")
+    d = datetime.datetime.now()
+    date = str( d.day)+"-"+str(d.month)+"-"+str(d.year) + " - " + str(d.hour)+"h"+str(d.minute)+ "min" + str(d.second) + "s"
+    dir_training_report = "../training_reports/training report " + date
     os.mkdir( dir_training_report)
     os.mkdir(dir_training_report + "/episode_demos")
     os.mkdir(dir_training_report + "/model_checkpoints")
     
     game.load_config(env_config_file)
+    game.set_window_visible(True)
     game.init()
     
     for i_episode in range(n_episodes):
@@ -93,7 +98,8 @@ def train_model(model, env_config_file, n_imagesByState = 4,
         epsilon = epsilon_schedule(i_episode)
         game.set_doom_map(np.random.choice(doom_map_list))
         # here we specify a file to store the demo to if we want
-        game.new_episode(dir_training_report + "/episode_demos/episode#"+str(i_episode))
+        # game.new_episode(dir_training_report + "/episode_demos/episode#"+str(i_episode))
+        game.new_episode()
         
         # initialize the image buffer with n_imagesByState blank image (in gray scale)
         # this is wath the agent will see : the n last images of the environnement
@@ -133,7 +139,7 @@ def train_model(model, env_config_file, n_imagesByState = 4,
                     action_id = torch.argmax(q_values).cpu().item()
                     
                     qvalues_during_training.append( torch.max(q_values).cpu().item() )       
-            action = convertActionIdToButtonsArray(action_id) # action signature! we are using the default one here
+            action = convertActionIdToButtonsArray(action_id, action_signature)
             # --------------------------------
             
             # the agent will hold this action for frame_skip+1 ticks, but still "watch" what's happening
@@ -152,7 +158,7 @@ def train_model(model, env_config_file, n_imagesByState = 4,
                 
             # ----- storing the transition in the replay buffer ------
             non_final = not game.is_episode_finished()
-            next_state = list(image_buffer) # this is the frames the agent observed while holding the action
+            next_state = np.array(image_buffer) # this is the frames the agent observed while holding the action
             
             replay_buffer.store_transition(state_image, action_id, reward, next_state, non_final)
             

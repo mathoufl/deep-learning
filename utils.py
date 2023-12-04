@@ -20,7 +20,7 @@ def demoToMP4(video_name, demo_file, config_file, resolution=vizdoom.ScreenResol
     game.load_config( config_file )
     game.set_screen_format( vizdoom.ScreenFormat.CRCGCB )
     game.set_screen_resolution(resolution)
-    game.set_window_visible(False)
+    game.set_window_visible(True)
     game.set_render_hud(True)
     game.init()
     game.replay_episode(demo_file)
@@ -30,7 +30,7 @@ def demoToMP4(video_name, demo_file, config_file, resolution=vizdoom.ScreenResol
         img = np.moveaxis(state.screen_buffer,0, 2)
         
         video.write( cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        game.advance_action(1)
+        game.advance_action()
     game.close()
     video.release()
     cv2.destroyAllWindows()
@@ -54,7 +54,7 @@ def demoToGIF(GIF_name, demo_file, config_file, resolution=vizdoom.ScreenResolut
         state = game.get_state()
         img = np.moveaxis(state.screen_buffer,0, 2)
         images.append(img)
-        game.advance_action(1)
+        game.advance_action()
     game.close()
     imageio.mimsave(GIF_name, images, duration = 1/35)
 

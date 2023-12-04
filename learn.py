@@ -11,7 +11,7 @@ def learn(model: model.Model, target_model: model.Model, optim: torch.optim.Adam
     loss.backward()
     optim.step()
     
-    print("training loss : ", loss.cpu().item())
+    # print("training loss : ", loss.cpu().item())
     
 
 def compute_loss(model: model.Model, target_model: model.Model, batch_states, batch_action, batch_reward, batch_next_state, batch_non_final):

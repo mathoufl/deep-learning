@@ -10,7 +10,7 @@ class Model(torch.nn.Module):
     def __init__(self) :
         super().__init__()
         self.conv_layers = torch.nn.Sequential(
-            torch.nn.Conv2d(4, 8, kernel_size=3, stride=2),
+            torch.nn.Conv2d(1, 8, kernel_size=3, stride=2),
             torch.nn.AvgPool2d((2,2)),
             torch.nn.ReLU(),
         
@@ -26,7 +26,7 @@ class Model(torch.nn.Module):
             )
         
         self.state_value = torch.nn.Linear(96, 1)
-        self.advantage = torch.nn.Linear(96, 108)
+        self.advantage = torch.nn.Linear(96, 18)
     
     def forward(self, input) :
         state_encoding = self.conv_layers(input)
