@@ -64,7 +64,7 @@ train_model(model,
             batch_size = 32,
             learning_rate =1e-3,
             weight_decay=5e-4,
-            n_episodes=200,
+            n_episodes=600,
             epsilon_schedule=epsilon_sch,
             window_visible = True,
             doom_map_list=["FIR_DODG"]
