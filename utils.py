@@ -1,7 +1,7 @@
 import numpy as np
 import re
-import cv2
-import imageio
+# import cv2
+# import imageio
 import vizdoom
 
 """
@@ -56,7 +56,8 @@ def demoToGIF(GIF_name, demo_file, config_file, resolution=vizdoom.ScreenResolut
         images.append(img)
         game.advance_action()
     game.close()
-    imageio.mimsave(GIF_name, images, duration = 1/35)
+    # imageio.mimsave(GIF_name, images, duration = 1/35)
+    imageio.mimsave(GIF_name, images)
 
 
 def convertActionIdToButtonsArray(action_id, action_space_signature = [2,2,3,3,3]):

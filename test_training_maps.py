@@ -17,12 +17,11 @@ from utils import demoToGIF, demoToMP4, convertActionIdToButtonsArray
 
 game = vizdoom.DoomGame()
 
-game.load_config( "gamedata/training_maps/config_training.cfg" )
+# game.load_config( "gamedata/training_maps/config_training.cfg" )
+# maps = ["MAP01", "MAP02"]
 
-# game.set_episode_timeout(50)
-
-
-maps = ["MAP01", "MAP02"]
+game.load_config( "gamedata/training_maps/fire_and_dodge.cfg" )
+maps = ["FIR_DODG"]
 
 game.set_window_visible(True)
 
@@ -58,7 +57,7 @@ for i in range(episodes):
         # plt.imshow(img, cmap="gray")
 
         # plt.show()
-        # print("\treward:", reward)
+        print("\treward:", reward)
         t+=1
     
     print("Result:", game.get_total_reward())
